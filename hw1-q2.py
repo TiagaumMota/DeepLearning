@@ -165,7 +165,7 @@ class NeuralRegression(_RegressionModel):
         
         #Output is linear
         yhat = z2
-        
+        #sadsadas
         return np.ravel(yhat)
 
 
