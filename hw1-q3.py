@@ -32,7 +32,9 @@ class LinearModel(object):
     def predict(self, X):
         """X (n_examples x n_features)"""
         scores = np.dot(self.W, X.T)  # (n_classes x n_examples)
+        #print(scores, end='\n\n')
         predicted_labels = scores.argmax(axis=0)  # (n_examples)
+        #print("p = ", predicted_labels, end='\n\n')
         return predicted_labels
 
     def evaluate(self, X, y):
@@ -54,7 +56,11 @@ class Perceptron(LinearModel):
         other arguments are ignored
         """
         # Q3.1a
-        raise NotImplementedError
+        y_hat = self.predict(x_i)
+        if y_hat != y_i:
+            self.W[y_i] = self.W[y_i] + x_i
+            self.W[y_hat] = self.W[y_hat] - x_i
+            
 
 
 class LogisticRegression(LinearModel):
@@ -65,7 +71,27 @@ class LogisticRegression(LinearModel):
         learning_rate (float): keep it at the default value for your plots
         """
         # Q3.1b
-        raise NotImplementedError
+
+        n_points = np.size(x_i,0) 
+        x_i = x_i.reshape(n_points,1)
+        
+        # vector of probabilities of size num_inputs.
+        probs = 1 / (1 + np.exp(-x_i.dot(self.W.T)))
+        # gradient of loss function; vector of size num_features.
+        print(probs.shape, y_i.shape)
+        
+        #gradient = x_i.dot(probs - y_i)
+        # Gradient descent update.
+        #self.W -= learning_rate * gradient
+
+        '''
+        # vector of probabilities of size num_inputs.
+        probs = 1 / (1 + np.exp(-inputs.dot(w)))
+        # gradient of loss function; vector of size num_features.
+        gradient = inputs.T.dot(probs - labels)
+        # Gradient descent update.
+        w -= eta * gradient
+        '''
 
 
 class MLP(object):
