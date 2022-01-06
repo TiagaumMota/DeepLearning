@@ -17,6 +17,21 @@ def configure_seed(seed):
     random.seed(seed)
     np.random.seed(seed)
 
+def softmax(input):
+    z = input - np.max(input, axis = 0, keepdims = True)
+    numerator = np.exp(z)
+    denominator = np.sum(numerator)
+    sftmax = numerator/denominator
+    
+    return sftmax 
+
+def relu(input):
+    return np.maximum(input, 0)
+
+def d_relu(input):
+    
+    return np.greater(input,0).astype(int)
+    
 
 class LinearModel(object):
     def __init__(self, n_classes, n_features, **kwargs):
@@ -71,13 +86,20 @@ class LogisticRegression(LinearModel):
         learning_rate (float): keep it at the default value for your plots
         """
         # Q3.1b
-
+        n_classes = np.size(self.W,0)
+        #print(n_classes)
+        
         n_points = np.size(x_i,0) 
         x_i = x_i.reshape(n_points,1)
         
-        y_hat = 1 / (1 + np.exp(-w.dot(x)))
-        # SGD update.
-        w += eta * (y - y_hat) * x
+        y_one = np.zeros((n_classes, 1))
+        y_one[y_i] = 1
+        
+        z = self.W @ x_i
+        gradient =  softmax(z) - y_one
+        
+        self.W = self.W - learning_rate * gradient @ x_i.T
+        
 
 
 
@@ -88,13 +110,33 @@ class MLP(object):
     # in main().
     def __init__(self, n_classes, n_features, hidden_size):
         # Initialize an MLP with a single hidden layer.
-        raise NotImplementedError
+        # initialize values in weight matrices following a normal distribution
+        mu = 0.1
+        sigma = 0.1
+        
+        self.w1 = np.random.normal(loc=mu, scale=sigma, size=(hidden_size, n_features))
+        self.w2 = np.random.normal(loc=mu, scale=sigma, size=(n_classes, hidden_size)) 
+    
+       # initialize biases with zero vectors
+        self.b1 = np.zeros((hidden_size, 1))
+        self.b2 = np.zeros((n_classes,1))
+
 
     def predict(self, X):
         # Compute the forward pass of the network. At prediction time, there is
         # no need to save the values of hidden nodes, whereas this is required
         # at training time.
-        raise NotImplementedError
+
+        
+        #Feedfoward Propagation 
+        z1 = self.w1 @ X.T + self.b1
+        h1 = relu(z1)
+        z2 = self.w2  @ h1 + self.b2
+        h2 = softmax(z2)
+        yhat = np.argmax(h2, axis = 0)
+        
+        return yhat.ravel()
+        
 
     def evaluate(self, X, y):
         """
@@ -108,7 +150,33 @@ class MLP(object):
         return n_correct / n_possible
 
     def train_epoch(self, X, y, learning_rate=0.001):
-        raise NotImplementedError
+        for x_i, y_i in zip(X, y):
+            
+            n_features = np.size(x_i, 0)
+            x_i = x_i.reshape(n_features,1)
+            
+            n_classes = np.size(self.w2,0)
+            
+            
+            #Feedfoward Propagation 
+            z1 = self.w1 @ x_i + self.b1
+            h1 = relu(z1)
+            z2 = self.w2  @ h1 + self.b2
+            h2 = softmax(z2)
+            
+            y_one = np.zeros((n_classes, 1))
+            y_one[y_i] = 1
+            
+            #Back Propagation
+            gradient_w2 =  (h2 - y_one) @ h1.T
+            gradient_b2 =  (h2 - y_one)
+            gradient_w1 = ((self.w2.T @ (h2 - y_one)) * d_relu(z1)) @ x_i.T
+            gradient_b1 = (self.w2.T @ (h2 - y_one)) * d_relu(z1)
+                
+            self.w2 = self.w2 - learning_rate * gradient_w2
+            self.w1 = self.w1 - learning_rate * gradient_w1
+            self.b2 = self.b2 - learning_rate * gradient_b2
+            self.b1 = self.b1 - learning_rate * gradient_b1
 
 
 def plot(epochs, valid_accs, test_accs):
@@ -157,7 +225,7 @@ def main():
     elif opt.model == 'logistic_regression':
         model = LogisticRegression(n_classes, n_feats)
     else:
-        model = MLP(n_classes, n_feats, opt.hidden_size, opt.layers)
+        model = MLP(n_classes, n_feats, opt.hidden_size)
     epochs = np.arange(1, opt.epochs + 1)
     valid_accs = []
     test_accs = []
