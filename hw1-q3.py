@@ -75,23 +75,11 @@ class LogisticRegression(LinearModel):
         n_points = np.size(x_i,0) 
         x_i = x_i.reshape(n_points,1)
         
-        # vector of probabilities of size num_inputs.
-        probs = 1 / (1 + np.exp(-x_i.dot(self.W.T)))
-        # gradient of loss function; vector of size num_features.
-        print(probs.shape, y_i.shape)
-        
-        #gradient = x_i.dot(probs - y_i)
-        # Gradient descent update.
-        #self.W -= learning_rate * gradient
+        y_hat = 1 / (1 + np.exp(-w.dot(x)))
+        # SGD update.
+        w += eta * (y - y_hat) * x
 
-        '''
-        # vector of probabilities of size num_inputs.
-        probs = 1 / (1 + np.exp(-inputs.dot(w)))
-        # gradient of loss function; vector of size num_features.
-        gradient = inputs.T.dot(probs - labels)
-        # Gradient descent update.
-        w -= eta * gradient
-        '''
+
 
 
 class MLP(object):
