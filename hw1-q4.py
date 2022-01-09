@@ -5,6 +5,7 @@
 import argparse
 
 import torch
+from torch.nn.modules.instancenorm import LazyInstanceNorm2d
 from torch.utils.data import DataLoader
 import torch.nn as nn
 from matplotlib import pyplot as plt
@@ -12,7 +13,7 @@ from matplotlib import pyplot as plt
 import utils
 
 
-# Q3.1
+# Q4.1
 class LogisticRegression(nn.Module):
 
     def __init__(self, n_classes, n_features, **kwargs):
@@ -27,6 +28,9 @@ class LogisticRegression(nn.Module):
         https://pytorch.org/docs/stable/nn.html
         """
         super().__init__()
+
+        self.linear = torch.nn.Linear(n_features, n_classes)
+
         # In a pytorch module, the declarations of layers needs to come after
         # the super __init__ line, otherwise the magic doesn't work.
 
@@ -44,10 +48,12 @@ class LogisticRegression(nn.Module):
         forward pass -- this is enough for it to figure out how to do the
         backward pass.
         """
-        raise NotImplementedError
+
+        outputs = torch.sigmoid(self.linear(x)) # manter ou tirar o sigmoid ???
+        return outputs
 
 
-# Q3.2
+# Q4.2
 class FeedforwardNetwork(nn.Module):
     def __init__(
             self, n_classes, n_features, hidden_size, layers,
@@ -65,7 +71,25 @@ class FeedforwardNetwork(nn.Module):
         includes modules for several activation functions and dropout as well.
         """
         super().__init__()
-        # Implement me!
+
+        # Set inputs as attributes to the class
+        self.n_classes = n_classes
+        self.n_features = n_features
+        self.hidden_size = hidden_size
+        self.layers = layers
+        self.activation_type = activation_type
+        self.dropout = dropout
+
+        # Layers definition
+        self.dropout_layer = torch.nn.Dropout(p=self.dropout)
+        self.layer1 = torch.nn.Linear(self.n_features,self.hidden_size)
+        if(self.activation_type == 'relu'):
+            self.activation_function = torch.nn.ReLU()
+        else:
+            self.activation_function = torch.nn.Tanh()
+        self.layer2 = torch.nn.Linear(self.hidden_size,n_classes)
+        self.layer_inter=torch.nn.Linear(self.hidden_size,self.hidden_size)
+
 
     def forward(self, x, **kwargs):
         """
@@ -75,7 +99,19 @@ class FeedforwardNetwork(nn.Module):
         the output logits from x. This will include using various hidden
         layers, pointwise nonlinear functions, and dropout.
         """
-        raise NotImplementedError
+
+        layer1 = self.layer1(x)
+        layer1 = self.activation_function(layer1)
+        layer1 = self.dropout_layer(layer1)
+
+        for n_layers in range(self.layers-1):
+            layer1 = self.layer_inter(layer1)
+            layer1 = self.activation_function(layer1)
+            layer1 = self.dropout_layer(layer1)
+
+        output = self.layer2(layer1)
+
+        return output
 
 
 def train_batch(X, y, model, optimizer, criterion, **kwargs):
@@ -96,7 +132,16 @@ def train_batch(X, y, model, optimizer, criterion, **kwargs):
     This function should return the loss (tip: call loss.item()) to get the
     loss as a numerical value that is not part of the computation graph.
     """
-    raise NotImplementedError
+    # PyTorch accumulates the gradients on subsequent backward passes
+    # Therefore, the gradient must be set to zero before the backpropagation
+
+    optimizer.zero_grad()
+    y_pred = model(X)
+    loss = criterion(y_pred, y)
+    loss.backward()
+    optimizer.step()
+
+    return loss.item()
 
 
 def predict(model, X):
@@ -158,8 +203,8 @@ def main():
     dev_X, dev_y = dataset.dev_X, dataset.dev_y
     test_X, test_y = dataset.test_X, dataset.test_y
 
-    n_classes = torch.unique(dataset.y).shape[0]  # 10
-    n_feats = dataset.X.shape[1]
+    n_classes = torch.unique(dataset.y).shape[0]  # 10 classes
+    n_feats = dataset.X.shape[1]                  # features = características da classe
 
     # initialize the model
     if opt.model == 'logistic_regression':
