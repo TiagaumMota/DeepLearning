@@ -241,6 +241,8 @@ def main():
         )
         valid_accs.append(model.evaluate(dev_X, dev_y))
         test_accs.append(model.evaluate(test_X, test_y))
+        print('Valid acc: %.4f' % (valid_accs[-1]))
+        print('Test acc: %.4f' % (test_accs[-1]), end="\n\n")
 
     # plot
     plot(epochs, valid_accs, test_accs)
