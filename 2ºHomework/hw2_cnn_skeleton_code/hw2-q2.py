@@ -26,7 +26,7 @@ class CNN(nn.Module):
         https://pytorch.org/docs/stable/nn.html
         """
         super(CNN, self).__init__()
-        # Implement me!
+        # Different sequentials in order to plot for Q2.3
         
         self.convblock1 = nn.Sequential(
             # Defining a 2D convolution layer
@@ -34,24 +34,35 @@ class CNN(nn.Module):
             
             nn.ReLU(), #Test inplace=True as argument of RELU
             
-            nn.MaxPool2d(kernel_size=(2,2), stride=2),
-        )
-        self.convblock2 = nn.Sequential(   
-            # Defining another 2D convolution layer
-            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(3,3), stride = 1, padding = 'valid'), 
-            
-            nn.ReLU(),
+            #Maxpooling layer
             nn.MaxPool2d(kernel_size=(2,2), stride=2),
         )
 
-        self.outputblock = nn.Sequential(          
+        self.convblock2 = nn.Sequential(   
+            # Defining another 2D convolution layer
+            nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(3,3), stride = 1, padding = 'valid'), 
+            # Activation function 
+            nn.ReLU(),
+            #Maxpooling layer
+            nn.MaxPool2d(kernel_size=(2,2), stride=2),
+        )
+
+        self.outputblock = nn.Sequential(    
+            #Transforming in a 1D array      
             nn.Flatten(),
+            #Affine transformation
             nn.Linear(in_features =32*6*6 , out_features = 600), #28x28 -> 14x14 -> 12x12 -> 6x6
+            #Activation function
             nn.ReLU(),
+            #Dropout with p dropout probability
             nn.Dropout(p = 0.5),    
+            #Affine transformation
             nn.Linear(in_features = 600, out_features = 120),
+            #Activation function
             nn.ReLU(),
+            #Affine transformation
             nn.Linear(in_features = 120, out_features = 10), #n_classes = 10
+            #Output layer with softmax
             nn.LogSoftmax(dim = 1)
         )
 
