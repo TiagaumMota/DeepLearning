@@ -25,31 +25,34 @@ class CNN(nn.Module):
         idea of how to us pytorch for this have a look at
         https://pytorch.org/docs/stable/nn.html
         """
-        super(CNN).__init__()
+        super(CNN, self).__init__()
         # Implement me!
         
-        self.cnn_layers = nn.Sequential(
+        self.convblock1 = nn.Sequential(
             # Defining a 2D convolution layer
             nn.Conv2d(in_channels=1, out_channels=16, kernel_size=(3,3), stride = 1, padding = 'same'),
-            #nn.BatchNorm2d(4),
+            
             nn.ReLU(), #Test inplace=True as argument of RELU
             
             nn.MaxPool2d(kernel_size=(2,2), stride=2),
-            
+        )
+        self.convblock2 = nn.Sequential(   
             # Defining another 2D convolution layer
             nn.Conv2d(in_channels=16, out_channels=32, kernel_size=(3,3), stride = 1, padding = 'valid'), 
-            #nn.BatchNorm2d(4),
+            
             nn.ReLU(),
             nn.MaxPool2d(kernel_size=(2,2), stride=2),
-            
+        )
+
+        self.outputblock = nn.Sequential(          
             nn.Flatten(),
             nn.Linear(in_features =32*6*6 , out_features = 600), #28x28 -> 14x14 -> 12x12 -> 6x6
             nn.ReLU(),
-            nn.Dropout(p = 0.5),
+            nn.Dropout(p = 0.5),    
             nn.Linear(in_features = 600, out_features = 120),
             nn.ReLU(),
             nn.Linear(in_features = 120, out_features = 10), #n_classes = 10
-            nn.LogSoftmax()
+            nn.LogSoftmax(dim = 1)
         )
 
     def forward(self, x):
@@ -68,9 +71,11 @@ class CNN(nn.Module):
         forward pass -- this is enough for it to figure out how to do the
         backward pass.
         """
-        x = self.cnn_layers(x)
+        output = self.convblock1(x)
+        output = self.convblock2(output)
+        output = self.outputblock(output)
 
-        return x
+        return output
         
 
 def train_batch(X, y, model, optimizer, criterion, **kwargs):
